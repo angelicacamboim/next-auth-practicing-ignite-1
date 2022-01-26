@@ -25,6 +25,7 @@ type AuthProviderProps = {
   children: ReactNode;
 }
 
+
 export const AuthContext = createContext({} as AuthContextData);
 
 
@@ -37,8 +38,11 @@ export function AuthProvider({ children } : AuthProviderProps){
     const { 'nextAuth.token': token } = parseCookies();
 
     if(token){
-      api.get('/me').then(response => {
+      api.get('/me').then( (response)  => {
+
         const { email, permissions, roles } = response.data;
+
+        // AxiosResponseMe
 
         setUser({
           email, 
@@ -74,7 +78,13 @@ export function AuthProvider({ children } : AuthProviderProps){
         roles,
       });
 
-      api.defaults.headers.common['Authorization']  = `Bearer ${token}`;
+      // api.defaults.headers['Authorization']  = `Bearer ${token}`;
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      // api.defaults.headers = {
+      //   Authorization: `Bearer ${token}`
+      // } as CommonHeaderProperties;
+
   
 
       Router.push('/dashboard');
