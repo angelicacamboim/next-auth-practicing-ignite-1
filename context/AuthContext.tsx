@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useEffect, useState } from "react";
-import { setCookie, parseCookies } from 'nookies';
+import { setCookie, parseCookies, destroyCookie } from 'nookies';
 import Router from 'next/router';
 
 import { api } from "../services/api";
@@ -28,6 +28,11 @@ type AuthProviderProps = {
 
 export const AuthContext = createContext({} as AuthContextData);
 
+export function signOut(){
+  destroyCookie(undefined, 'nextauth.token');
+  destroyCookie(undefined, 'nextauth.refreshToken');
+  Router.push('/');
+}
 
 export function AuthProvider({ children } : AuthProviderProps){
   const [user, setUser] = useState<User>();
@@ -35,11 +40,10 @@ export function AuthProvider({ children } : AuthProviderProps){
   const isAuthenticated = !!user;
 
   useEffect(()=> {
-    const { 'nextAuth.token': token } = parseCookies();
+    const { 'nextauth.token': token } = parseCookies();
 
     if(token){
       api.get('/me').then( (response)  => {
-
         const { email, permissions, roles } = response.data;
 
         // AxiosResponseMe
@@ -50,7 +54,7 @@ export function AuthProvider({ children } : AuthProviderProps){
           roles
         });
 
-      });
+      }).catch(() => signOut())
     }
   },[]);
 
@@ -63,11 +67,11 @@ export function AuthProvider({ children } : AuthProviderProps){
   
       const { token, refreshToken ,permissions, roles } = response.data;
 
-      setCookie(undefined, 'nextAuth.token', token, {
+      setCookie(undefined, 'nextauth.token', token, {
         maxAge: 60 * 60 * 25 * 30, // 30 days
         path: '/'
       });
-      setCookie(undefined, 'nextAuth.refreshToken', refreshToken, {
+      setCookie(undefined, 'nextauth.refreshToken', refreshToken, {
         maxAge: 60 * 60 * 25 * 30, // 30 days
         path: '/'
       });
@@ -78,13 +82,7 @@ export function AuthProvider({ children } : AuthProviderProps){
         roles,
       });
 
-      // api.defaults.headers['Authorization']  = `Bearer ${token}`;
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-      // api.defaults.headers = {
-      //   Authorization: `Bearer ${token}`
-      // } as CommonHeaderProperties;
-
   
 
       Router.push('/dashboard');
